@@ -1,0 +1,31 @@
+
+syntax = "proto3";
+
+package hello;
+
+// Service definition
+service HelloService {
+    rpc Hello (HelloRequest) returns (HelloReply) {}
+    rpc Goodbye (ByeByeRequest) returns (ByeByeResponse) {}
+}
+
+// The request message containing the user's name.
+message HelloRequest {
+    string name = 1;
+}
+
+// The response message containing the greetings
+message HelloReply {
+    string reply = 1;
+}
+
+message ByeByeRequest {
+    string name = 1;
+}
+
+message ByeByeResponse {
+    string reply = 1;
+}
+
+
+

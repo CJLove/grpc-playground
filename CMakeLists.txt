@@ -12,6 +12,7 @@ add_definitions(-std=c++11)
 
 # Simple hello-world
 add_subdirectory(hello)
+add_subdirectory(secure_hello)
 
 
 
