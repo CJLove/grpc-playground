@@ -5,6 +5,7 @@
 
 #include <grpc++/grpc++.h>
 #include <grpc++/security/credentials.h>
+#include "ssl_test_data.h"
 
 #include "helloworld.grpc.pb.h"
 
@@ -92,10 +93,16 @@ int main(int argc, char** argv) {
         }
     }
 
-    auto channel_creds = grpc::SslCredentials(grpc::SslCredentialsOptions());
-    
 
-    HelloClient client(grpc::CreateChannel(host+":"+port,channel_creds));
+    grpc::SslCredentialsOptions ssl_opts;
+    ssl_opts.pem_root_certs = test_server1_cert;
+
+    grpc::ChannelArguments args;
+    args.SetSslTargetNameOverride(host);
+    
+    auto channel_creds = grpc::SslCredentials(ssl_opts);
+
+    HelloClient client(grpc::CreateCustomChannel(host+":"+port,channel_creds,args));
 
     std::string reply = client.Hello(user);
     std::cout << "Hello received: " << reply << std::endl;

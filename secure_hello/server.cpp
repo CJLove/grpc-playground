@@ -7,6 +7,7 @@
 #include <grpc++/security/server_credentials.h>
 
 #include "helloworld.grpc.pb.h"
+#include "ssl_test_data.h"
 
 using grpc::Server;
 using grpc::ServerBuilder;
@@ -47,7 +48,9 @@ void RunServer(const std::string &host, const std::string &port) {
 
     std::shared_ptr<ServerCredentials> creds;
 
-    SslServerCredentialsOptions::PemKeyCertPair pkcp ={"a","b"};
+    SslServerCredentialsOptions::PemKeyCertPair pkcp ={ test_server1_key,
+                                                        test_server1_cert };
+
     SslServerCredentialsOptions ssl_opts;
     ssl_opts.pem_root_certs="";
     ssl_opts.pem_key_cert_pairs.push_back(pkcp);
