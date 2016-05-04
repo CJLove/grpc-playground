@@ -1,6 +1,8 @@
 # Emacs/xemacs backup files
 *~
 
+certs/*.pem
+
 # build directory
 build
 
