@@ -2,6 +2,9 @@
 *~
 
 certs/*.pem
+certs/*.crt
+certs/*.key
+certs/*.csr
 
 # build directory
 build

@@ -1,5 +1,7 @@
 #include <unistd.h>
 #include <iostream>
+#include <fstream>
+#include <sstream>
 #include <memory>
 #include <string>
 
@@ -39,7 +41,9 @@ class HelloServiceImpl final : public HelloService::Service {
   }
 };
 
-void RunServer(const std::string &host, const std::string &port) {
+void RunServer(const std::string &host, const std::string &port,
+               const char*root,
+               const char*cert, const char*key) {
     std::string server_address = host + ":" + port;
 
     HelloServiceImpl service;
@@ -48,12 +52,11 @@ void RunServer(const std::string &host, const std::string &port) {
 
     std::shared_ptr<ServerCredentials> creds;
 
-    SslServerCredentialsOptions::PemKeyCertPair pkcp ={ test_server1_key,
-                                                        test_server1_cert };
-
+    SslServerCredentialsOptions::PemKeyCertPair pkcp={ key, cert };
     SslServerCredentialsOptions ssl_opts;
     ssl_opts.pem_root_certs="";
     ssl_opts.pem_key_cert_pairs.push_back(pkcp);
+    ssl_opts.pem_root_certs = root;
     creds = grpc::SslServerCredentials(ssl_opts);
     
     // Listen on the given address without any authentication mechanism.
@@ -73,9 +76,12 @@ void RunServer(const std::string &host, const std::string &port) {
 int main(int argc, char** argv) {
     std::string host = "0.0.0.0";
     std::string port = "5000";
+    std::string rootFileName="../certs/ca.crt";
+    std::string certFileName="../certs/server.crt";
+    std::string keyFileName="../certs/server.key";
 
     int c = 0;
-    while ((c = getopt(argc,argv,"h:p:")) != EOF) {
+    while ((c = getopt(argc,argv,"h:p:r:c:k:")) != EOF) {
         switch(c) {
         case 'h':
             host = optarg;
@@ -83,10 +89,46 @@ int main(int argc, char** argv) {
         case 'p':
             port = optarg;
             break;
+        case 'r':
+            rootFileName=optarg;
+            break;
+        case 'c':
+            certFileName=optarg;
+            break;
+        case 'k':
+            keyFileName=optarg;
+            break;
         }
     }
 
-    RunServer(host,port);
+    std::stringstream caStr;
+    std::stringstream certStr;
+    std::stringstream keyStr;
+
+    std::ifstream caFile(rootFileName);
+    if (caFile) {
+        caStr << caFile.rdbuf();
+        caFile.close();
+        std::cout << "Using root CA\n" << caStr.str().c_str() << std::endl;
+    }
+
+    std::ifstream certFile(certFileName);
+    if (certFile) {
+        certStr << certFile.rdbuf();
+        certFile.close();
+
+        std::cout << "Using cert:\n" << certStr.str().c_str() << std::endl;
+    }
+
+    std::ifstream keyFile(keyFileName);
+    if (keyFile) {
+        keyStr << keyFile.rdbuf();
+        keyFile.close();
+
+        std::cout << "Using key:\n" << keyStr.str().c_str() << std::endl;        
+    }
+    
+    RunServer(host,port,caStr.str().c_str(),certStr.str().c_str(),keyStr.str().c_str());
 
     return 0;
 }

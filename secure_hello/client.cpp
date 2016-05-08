@@ -2,6 +2,8 @@
 #include <iostream>
 #include <memory>
 #include <string>
+#include <fstream>
+#include <sstream>
 
 #include <grpc++/grpc++.h>
 #include <grpc++/security/credentials.h>
@@ -75,9 +77,12 @@ int main(int argc, char** argv) {
     std::string host="localhost";
     std::string port = "5000";
     std::string user = "me";
+    std::string rootFileName="../certs/ca.crt";
+    std::string certFileName="../certs/client.crt";
+    std::string keyFileName="../certs/client.key";
 
     int c = 0;
-    while ((c = getopt(argc,argv,"h:p:u:")) != EOF) {
+    while ((c = getopt(argc,argv,"h:p:u:r:c:k:")) != EOF) {
         switch(c) {
         case 'h':
             host = optarg;
@@ -88,21 +93,57 @@ int main(int argc, char** argv) {
         case 'u':
             user = optarg;
             break;
+        case 'r':
+            rootFileName=optarg;
+            break;
+        case 'c':
+            certFileName=optarg;
+            break;
+        case 'k':
+            keyFileName=optarg;
+            break;            
         default:
             break;
         }
     }
 
+    std::stringstream caStr;
+    std::stringstream certStr;
+    std::stringstream keyStr;
+    
+    std::ifstream caFile(rootFileName);
+    if (caFile) {
+        caStr << caFile.rdbuf();
+        caFile.close();
+        std::cout << "Using root CA\n" << caStr.str().c_str() << std::endl;
+    }
 
-    grpc::SslCredentialsOptions ssl_opts;
-    ssl_opts.pem_root_certs = test_server1_cert;
+    std::ifstream certFile(certFileName);
+    if (certFile) {
+        certStr << certFile.rdbuf();
+        certFile.close();
+
+        std::cout << "Using cert:\n" << certStr.str().c_str() << std::endl;
+    }
+
+    std::ifstream keyFile(keyFileName);
+    if (keyFile) {
+        keyStr << keyFile.rdbuf();
+        keyFile.close();
+
+        std::cout << "Using key:\n" << keyStr.str().c_str() << std::endl;        
+    }
+
+    grpc::SslCredentialsOptions ssl_opts = { caStr.str(), keyStr.str(), certStr.str() };
+
+    //HelloClient client(grpc::CreateChannel(host+":"+port,grpc::SslCredentials(ssl_opts)));    
 
     grpc::ChannelArguments args;
     args.SetSslTargetNameOverride(host);
-    
     auto channel_creds = grpc::SslCredentials(ssl_opts);
 
     HelloClient client(grpc::CreateCustomChannel(host+":"+port,channel_creds,args));
+
 
     std::string reply = client.Hello(user);
     std::cout << "Hello received: " << reply << std::endl;
